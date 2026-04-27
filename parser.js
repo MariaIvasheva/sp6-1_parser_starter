@@ -69,16 +69,18 @@ function getOpenGraph() {
 
         }
 
-        // // Отрезаем приставку "og:" (это первые 3 символа)
-        // const key = propertyName.slice(3);
-
-        // // Для всех остальных тегов берем текст из разметки
-        // og[key] = tag.getAttribute('content');
-
     }
+
     // console.log(og);
 
     // og.title = document.querySelector('title').textContent.trim();
+
+
+    // const ogTitleTag = document.querySelector('meta[property="og:title"]');
+    // if (ogTitleTag) {
+    //     og.title = ogTitleTag.getAttribute('content').trim();
+    // }
+
 
 
     // Возвращаем готовый чистый объект
@@ -102,9 +104,12 @@ function getMetaInfo() {
     // Вызываем вынесенные функции
     return {
         language: document.documentElement.lang,
-        title: getTitle(),
         description: description,
-        opengraph: getOpenGraph(),
+        title: getTitle(),
+        opengraph: {
+            ...getOpenGraph(),
+            title: getTitle()
+        },
         keywords: getKeywords()
     };
 
