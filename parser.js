@@ -116,12 +116,234 @@ function getMetaInfo() {
 }
 
 
+function getProductData() {
+    // Находим первую (главную) секцию товара на странице
+    const productSection = document.querySelector('section.product');
+
+    // 1. Идентификатор товара (data-id)
+    const id = productSection ? productSection.dataset.id : '';
+
+    // let id = ''; // Сначала создаем пустую переменную
+
+    // if (productSection) {
+    //     id = productSection.dataset.id; // Если секция есть — берем ID
+    // } else {
+    //     id = ''; // Если нет — оставляем пустой (эту строчку можно даже опустить)
+    // }
+
+    // const id = productSection?.dataset?.id || '';
+
+    // 2. Название товара (текст в h1-теге)
+    const nameNode = document.querySelector('h1.title');
+    const name = nameNode ? nameNode.textContent.trim() : '';
+
+    // 3. Статус кнопки лайка (проверяем класс active у кнопки .like)
+    const likeButton = document.querySelector('.like');
+    const isLiked = likeButton ? likeButton.classList.contains('active') : false;
+
+    // 4. Сбор разноцветных бирок (тегов)
+    const tags = {
+        category: [],
+        discount: [],
+        label: []
+    };
+
+    const tagNodes = document.querySelectorAll('.tags span');
+
+    tagNodes.forEach(node => {
+        const text = node.textContent.trim();
+
+        if (node.classList.contains('green')) {
+            tags.category.push(text);
+        } else if (node.classList.contains('red')) {
+            tags.discount.push(text);
+        } else if (node.classList.contains('blue')) {
+            tags.label.push(text);
+        }
+    });
+
+    // for (const node of tagNodes) {
+    //     const text = node.textContent.trim()
+    //     if (node.classList.contains('green')) {
+    //         tags.category.push(text);
+    //     } else if (node.classList.contains('red')) {
+    //         tags.discount.push(text);
+    //     } else if (node.classList.contains('blue')) {
+    //         tags.label.push(text);
+    //     }
+    // };
+
+    // 5. Расчет цен и скидок
+    const priceContainer = document.querySelector('.price');
+
+    // Вытаскиваем старую цену (она внутри span) - это строка "₽80"
+    const oldPriceSpan = priceContainer.querySelector('span');
+    // Вытаскиваем текст "₽80", стираем значок рубля, оставляя строку "80" и превращаем строку "80" в настоящее число 80, с которым можно складывать и вычитать
+    const oldPrice = oldPriceSpan ? parseInt(oldPriceSpan.textContent.replace('₽', '')) : 0;
+
+    // Вытаскиваем текущую цену
+    // Берем вообще весь текст из блока целиком. В переменной currentPriceText теперь лежит строка "₽50₽80"
+    let currentPriceText = priceContainer ? priceContainer.textContent : '';
+    // Берем нашу общую строку "₽50₽80" и говорим методу replace: «Найди в ней кусок "₽80" и сотри его!»
+    if (oldPriceSpan) {
+        // В переменной currentPriceText остается чистая строка: "₽50"
+        currentPriceText = currentPriceText.replace(oldPriceSpan.textContent, '');
+    }
+
+    // Стираем значок рубля через .replace('₽', '') — остается строка "50"
+    // Функция parseInt превращает строку в настоящее число 50
+    const price = parseInt(currentPriceText.replace('₽', ''));
+
+    // Считаем разницу (скидка в валюте)
+    const discount = oldPrice - price;
+
+    // Считаем процент скидки (строго по ТЗ с двумя знаками после запятой)
+    let discountPercent = '0%';
+
+    // Проверяем, была ли старая цена больше нуля. Если старая цена равна нулю, на неё нельзя делить (в математике это вызовет ошибку)
+    if (oldPrice > 0) {
+        // .toFixed(2) — это метод, который превращает обычное число в строку и оставляет ровно два знака после запятой
+        discountPercent = ((discount / oldPrice) * 100).toFixed(2) + '%';
+    }
+
+    // 6. Сбор картинок
+    // Cоздаём пустую коробку-массив, куда будем складывать готовые объекты картинок
+    const images = [];
+
+    // Находим все картинки img внутри навигации с миниматюрами
+    const imageNodes = document.querySelectorAll('.preview nav img');
+
+    imageNodes.forEach(img => {
+        // Для каждой найденной картинки мы создаём новый объект и закидываем его в массив
+        images.push({
+            // Мелкая картинка - обычный src
+            preview: img.getAttribute('src') || '',
+            // Большая картинка - берем из data-src
+            full: img.getAttribute('data-src') || '',
+            // Описание картинки
+            alt: img.getAttribute('alt') || ''
+        });
+    });
+
+    // const images = [];
+
+    // // Находим все картинки
+    // const imageNodes = document.querySelectorAll('.preview nav img');
+
+    // // Цикл for...of берет по очереди каждую картинку из списка
+    // for (const img of imageNodes) {
+
+    //     // Создаем объект для одной картинки
+    //     const imageObject = {
+    //         preview: img.getAttribute('src') || '',
+    //         full: img.getAttribute('data-src') || '',
+    //         alt: img.getAttribute('alt') || ''
+    //     };
+
+    //     // Кладем этот объект в наш массив
+    //     images.push(imageObject);
+    // }
+
+
+
+    // 7. Свойства товара
+    // Создаем пустой объект данных
+    const properties = {};
+    // Находим все строки характеристик
+    const propLines = document.querySelectorAll('.properties li');
+
+    propLines.forEach(line => {
+        // Находим все теги и span внутри одной строчки
+        const spans = line.querySelectorAll('span');
+
+        // Проверяем наличие обоих элементов
+        if (spans.length >= 2) {
+            // Забираем текст левой колонки
+            const key = spans[0].textContent.trim();
+            // Забираем текст правой колонки
+            const value = spans[1].textContent.trim();
+
+            // Записываем в объект: ключ = значение
+            properties[key] = value;
+        }
+    });
+
+    // 8. Полное описание по карточке товара с сохранением HTML-размеки по карточке товара, 
+    // скрытое под сворачиваемым блоком
+    const descContainer = document.querySelector('.description');
+    let description = '';
+
+    if (descContainer) {
+        // Делаем копию блока, чтобы случайно не сломать оригинал на странице
+        // Метод cloneNode создаёт точную копию HTML-узла. Параметр true означает «скопировать вместе со всеми вложенными тегами
+        const clone = descContainer.cloneNode(true);
+
+        // Находим все теги внутри нашей копии (и заголовки, и параграфы)
+        const allTags = clone.querySelectorAll('*');
+
+        // Пробегаем по ним и стираем любые стрибуты
+        allTags.forEach(tag => {
+            // Цикл while крутится до тех пор, пока количество атрибутов у тега больше нуля
+            while (tag.attributes.length > 0) {
+                // Заглядываем в список всех атрибутов тега (attributes)
+                // Берем самый первый из них по индексу (это class="unused")
+                // Забираем его имя через .name (получаем слово "class")
+                // И удаляем его через removeAttribute('class')
+                tag.removeAttribute(tag.attributes[0].name);
+            }
+        });
+
+        // Забираем очищенный HTML-код
+        description = clone.innerHTML.trim();
+
+        // Находим все теги
+        // const allTags = clone.querySelectorAll('*');
+
+        // // Перебираем каждый найденный тег
+        // for (const tag of allTags) {
+
+        //     // 1. Создаем массив, куда сложим имена всех атрибутов этого тега
+        //     const attributeNames = [];
+
+        //     // 2. Сначала просто собираем имена атрибутов (например: ["class", "id"])
+        //     for (const attr of tag.attributes) {
+        //         attributeNames.push(attr.name);
+        //     }
+
+        //     // 3. А теперь бежим по нашему списку имен и стираем их у тега
+        //     for (const name of attributeNames) {
+        //         tag.removeAttribute(name); // Стираем класс, стираем id
+        //     }
+        // }
+
+    }
+
+
+    // Возвращаем собранный объект
+    return {
+        id: id,
+        name: name,
+        isLiked: isLiked,
+        tags: tags,
+        price: price,
+        oldPrice: oldPrice,
+        discount: discount,
+        discountPercent: discountPercent,
+        currency: "RUB", // Пока прописали жестко, валюту вытащим позже
+        images: images,
+        properties: properties,
+        description: description
+    };
+
+}
+
+
 function parsePage() {
     return {
-        meta: getMetaInfo(), // Мета-информация страницы
-        product: {},         // Данные карточки товара
-        suggested: [],       // Массив дополнительных товаров
-        reviews: []          // Массив отзывов
+        meta: getMetaInfo(),        // Мета-информация страницы
+        product: getProductData(),  // Данные карточки товара
+        suggested: [],              // Массив дополнительных товаров
+        reviews: []                 // Массив отзывов
     };
 }
 
