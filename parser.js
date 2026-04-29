@@ -115,32 +115,8 @@ function getMetaInfo() {
 
 }
 
-
-function getProductData() {
-    // Находим первую (главную) секцию товара на странице
-    const productSection = document.querySelector('section.product');
-
-    // 1. Идентификатор товара (data-id)
-    const id = productSection ? productSection.dataset.id : '';
-
-    // let id = ''; // Сначала создаем пустую переменную
-
-    // if (productSection) {
-    //     id = productSection.dataset.id; // Если секция есть — берем ID
-    // } else {
-    //     id = ''; // Если нет — оставляем пустой (эту строчку можно даже опустить)
-    // }
-
-    // const id = productSection?.dataset?.id || '';
-
-    // 2. Название товара (текст в h1-теге)
-    const nameNode = document.querySelector('h1.title');
-    const name = nameNode ? nameNode.textContent.trim() : '';
-
-    // 3. Статус кнопки лайка (проверяем класс active у кнопки .like)
-    const likeButton = document.querySelector('.like');
-    const isLiked = likeButton ? likeButton.classList.contains('active') : false;
-
+// Функция для сбора тегов (бирок)
+function getProductTags() {
     // 4. Сбор разноцветных бирок (тегов)
     const tags = {
         category: [],
@@ -161,6 +137,7 @@ function getProductData() {
             tags.label.push(text);
         }
     });
+    return tags;
 
     // for (const node of tagNodes) {
     //     const text = node.textContent.trim()
@@ -172,7 +149,20 @@ function getProductData() {
     //         tags.label.push(text);
     //     }
     // };
+}
 
+// Вспомогательная функция для валюты
+// Вызываем в function getProductPrices()
+// const currency = getCurrencyCode(priceContainer.textContent);
+function getCurrencyCode(text) {
+    if (text.includes('$')) return 'USD';
+    if (text.includes('€')) return 'EUR';
+    if (text.includes('₽')) return 'RUB';
+    return 'RUB';
+}
+
+// Функция для расчета цен
+function getProductPrices() {
     // 5. Расчет цен и скидок
     const priceContainer = document.querySelector('.price');
 
@@ -206,6 +196,15 @@ function getProductData() {
         discountPercent = ((discount / oldPrice) * 100).toFixed(2) + '%';
     }
 
+    // 1. ВЫЗЫВАЕМ ПЕРЕВОДЧИК ВАЛЮТЫ
+    // Передаем туда весь текст из контейнера с ценами (где лежит значок ₽, $ или €)
+    const currency = getCurrencyCode(priceContainer ? priceContainer.textContent : '');
+
+    return { price, oldPrice, discount, discountPercent, currency };
+}
+
+// Функция для сбора картинок
+function getProductImages() {
     // 6. Сбор картинок
     // Cоздаём пустую коробку-массив, куда будем складывать готовые объекты картинок
     const images = [];
@@ -243,9 +242,11 @@ function getProductData() {
     //     // Кладем этот объект в наш массив
     //     images.push(imageObject);
     // }
+    return images;
+}
 
-
-
+// Функция для сбора свойств
+function getProductProperties() {
     // 7. Свойства товара
     // Создаем пустой объект данных
     const properties = {};
@@ -267,7 +268,11 @@ function getProductData() {
             properties[key] = value;
         }
     });
+    return properties;
+}
 
+// Функция для сбора описания
+function getProductDescription() {
     // 8. Полное описание по карточке товара с сохранением HTML-размеки по карточке товара, 
     // скрытое под сворачиваемым блоком
     const descContainer = document.querySelector('.description');
@@ -317,22 +322,52 @@ function getProductData() {
         // }
 
     }
+    return description;
+}
 
+function getProductData() {
+    // Находим первую (главную) секцию товара на странице
+    const productSection = document.querySelector('section.product');
+
+    // 1. Идентификатор товара (data-id)
+    // const id = productSection ? productSection.dataset.id : '';
+
+    // let id = ''; // Сначала создаем пустую переменную
+
+    // if (productSection) {
+    //     id = productSection.dataset.id; // Если секция есть — берем ID
+    // } else {
+    //     id = ''; // Если нет — оставляем пустой (эту строчку можно даже опустить)
+    // }
+
+    // const id = productSection?.dataset?.id || '';
+
+    // 2. Название товара (текст в h1-теге)
+    const nameNode = document.querySelector('h1.title');
+    // const name = nameNode ? nameNode.textContent.trim() : '';
+
+    // 3. Статус кнопки лайка (проверяем класс active у кнопки .like)
+    const likeButton = document.querySelector('.like');
+    // const isLiked = likeButton ? likeButton.classList.contains('active') : false;
+
+    const { price, oldPrice, discount, discountPercent, currency } = getProductPrices();
 
     // Возвращаем собранный объект
     return {
-        id: id,
-        name: name,
-        isLiked: isLiked,
-        tags: tags,
+        id: productSection ? productSection.dataset.id : '',
+        name: nameNode ? nameNode.textContent.trim() : '',
+        isLiked: likeButton ? likeButton.classList.contains('active') : false,
+        tags: getProductTags(),
         price: price,
         oldPrice: oldPrice,
         discount: discount,
         discountPercent: discountPercent,
-        currency: "RUB", // Пока прописали жестко, валюту вытащим позже
-        images: images,
-        properties: properties,
-        description: description
+        currency: currency,
+        // ВМЕСТО 5 СТРОЧЕК С ЦЕНАМИ ПИШЕМ ВСЕГО ОДНУ:
+        // ...getProductPrices(),
+        images: getProductImages(),
+        properties: getProductProperties(),
+        description: getProductDescription()
     };
 
 }
