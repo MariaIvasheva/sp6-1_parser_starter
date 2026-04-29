@@ -372,13 +372,84 @@ function getProductData() {
 
 }
 
+// Функция предложений товаров
+function getSuggestedProducts() {
+    const suggested = [];
+
+    // 1. Находим все карточки товаров в блоке рекомендаций
+    const articles = document.querySelectorAll('.suggested .items article');
+
+    // Заходим в каждую карточку article
+    for (const article of articles) {
+        // Забираем текст с ценой и значком валюты, например, "₽34123"
+        const priceText = article.querySelector('b')?.textContent.trim() || '';
+
+        suggested.push({
+            // Имя из тега h3, например, test title
+            name: article.querySelector('h3')?.textContent.trim() || '',
+
+            // Описание из тега p, например, desc about product
+            description: article.querySelector('p')?.textContent.trim() || '',
+
+            // Ссылка на картинку из атрибута src (берем именно адрес картинки)
+            image: article.querySelector('img')?.getAttribute('src') || '',
+
+            // Тест ждёт цену строкой и без значка рубля
+            // Поэтому мы берем "₽34123", стираем ₽ через replace и получаем чистую строку "34123"
+            price: priceText.replace('₽', '').trim(),
+
+            // Готовый переводчик валюты (передаем туда строку с рублём)
+            // Вызываем готовую «умную» функцию getCurrencyCode и отдаем ей ту же строку "₽34123"
+            // Она видит там знак рубля и возвращает нам "RUB"
+            currency: getCurrencyCode(priceText)
+        });
+    }
+
+    return suggested;
+}
+
+// Функция отзывов
+function getReviews() {
+    const reviews = [];
+
+    // Находим каждую карточку article с рейтингом
+    const articles = document.querySelectorAll('.reviews .items article');
+
+    // Заходим в каждую карточку
+    for (const article of articles) {
+        // 1. Считаем количество заполненных звезд
+        // У закрашенных звезд есть класс .filled
+        // Находим все элементы с классом .filled
+        const rating = article.querySelectorAll('.rating .filled').length;
+
+        // 2. Забираем дату и меняем слэши на точки
+        const rawDate = article.querySelector('.author i')?.textContent.trim() || '';
+        const date = rawDate.replaceAll('/', '.');
+
+        // Создаем объект внутри объекта
+        reviews.push({
+            rating: rating,
+            author: {
+                // Проверяем есть ли ссылка на карточку товара в рейтинге, если есть вытаскиваем, если нет, выдаст пустаую строку (undefined)
+                avatar: article.querySelector('.author img')?.getAttribute('src') || '',
+                name: article.querySelector('.author span')?.textContent.trim() || ''
+            },
+            title: article.querySelector('h3.title')?.textContent.trim() || '',
+            description: article.querySelector('p')?.textContent.trim() || '',
+            date: date
+        });
+    }
+
+    return reviews;
+}
+
 
 function parsePage() {
     return {
-        meta: getMetaInfo(),        // Мета-информация страницы
-        product: getProductData(),  // Данные карточки товара
-        suggested: [],              // Массив дополнительных товаров
-        reviews: []                 // Массив отзывов
+        meta: getMetaInfo(),                // Мета-информация страницы
+        product: getProductData(),          // Данные карточки товара
+        suggested: getSuggestedProducts(),  // Массив дополнительных товаров
+        reviews: getReviews()               // Массив отзывов
     };
 }
 
